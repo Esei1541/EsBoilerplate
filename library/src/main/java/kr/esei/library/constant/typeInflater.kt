@@ -1,4 +1,4 @@
-package kr.esei.esboilerplate
+package kr.esei.library.constant
 
 import android.view.LayoutInflater
 import android.view.ViewGroup

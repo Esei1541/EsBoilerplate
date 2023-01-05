@@ -1,4 +1,4 @@
-package kr.esei.eseipository.utils
+package kr.esei.library.constant
 
 import android.content.Context
 import android.content.Intent
@@ -266,7 +266,7 @@ public fun String.emailValidation(): Boolean {
 /**
  * String의 공백문자를 줄바꿈되지 않는 특수문자로 변경
  */
-internal fun String.toNoBreakString(): String {
+public fun String.toNoBreakString(): String {
     return this.replace(" ", "\u00A0")
 }
 
@@ -274,4 +274,4 @@ internal fun String.toNoBreakString(): String {
  * TypeToken 객체를 통한 Gson의 fromJson 호출
  * List 등 TypeToken을 정의하지 않으면 Exception이 발생하는 타입을 변환할 때 사용하면 됨
  */
-internal inline fun <reified T> Gson.fromJson(json: String) = fromJson<T>(json, object : TypeToken<T>() {}.type)
+public inline fun <reified T> Gson.fromJson(json: String): T = fromJson<T>(json, object : TypeToken<T>() {}.type)

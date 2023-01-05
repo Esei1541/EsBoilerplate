@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
-import kr.esei.eseipository.utils.toast
+import kr.esei.library.constant.toast
 
 /**
  * 모든 MVVM Activity의 공통 사항을 정의하는 추상 클래스.

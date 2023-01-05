@@ -3,7 +3,7 @@ package kr.esei.library.module
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewbinding.ViewBinding
-import kr.esei.esboilerplate.ActivityInflater
+import kr.esei.library.constant.ActivityInflater
 
 /**
  * ViewBinding 기반 Activity의 공통 사항을 정의하는 추상 클래스.

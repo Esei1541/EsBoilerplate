@@ -11,7 +11,7 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
-import kr.esei.eseipository.utils.activityResultLauncher
+import kr.esei.library.constant.activityResultLauncher
 
 /**
  * 기본적인 권한 체크 flow를 간편하게 사용할 수 있도록 정의한 유틸리티 클래스
