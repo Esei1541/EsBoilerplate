@@ -12,6 +12,15 @@ EsBoilerplate는 안드로이드 개발 환경에서 중복적으로 사용되�
     - [BaseActivity](#base-activity)
     - [BaseActivityForViewBinding](#base-activity-for-view-binding)
     - [BaseApplication](#base-application)
+    - [BaseFragment](#base-fragment)
+    - [BaseFragmentForViewBinding](#base-fragment-for-view-binding)
+    - [BaseViewModel](#base-view-model)
+    - [PreferenceManager](#preference-manager)
+    - [RecyclerViewBaseAdapter](#recycler-view-base-adapter)
+    - [RecyclerViewParentController](#recycler-view-parent-controller)
+    - [SimplePermissionChecker](#simple-permission-checker)
+    - [ProgressDialog](#progress-dialog)
+    - [Extension Functions](#extension-functions)
 </br>
 
 <h2 id="setup">⚙Setup</h2>
@@ -130,7 +139,7 @@ class ExampleActivity: BaseActivity<ActivityExampleBinding, ExampleViewModel>(R.
 ```
 
 
-#### Parameters
+#### Values
 > `protected open val TAG: String`
 > - 클래스의 이름으로 문자열을 반환합니다.
 > - override를 통해 문자열을 재정의할 수 있습니다.
@@ -173,7 +182,7 @@ class ExampleActivity : BaseActivityForViewBinding<ActivityExampleBinding>(Activ
 ```
 
 
-#### Parameters
+#### Values
 
 > `protected open val TAG: String`
 > - 클래스의 이름으로 문자열을 반환합니다.
@@ -205,7 +214,7 @@ public class BaseApplication(
 전역 Application 클래스에서 주로 사용하는 기능을 정의합니다.</br>
 SharedPreperence에 접근 가능한 Manager 클래스를 관리하고 기본적인 ProgressDialog의 출력을 설정할 수 있습니다.</br>
 
-#### Parameters
+#### Values
 
 > `protected val TAG: String`
 > - 클래스의 이름으로 문자열을 반환합니다.
@@ -233,4 +242,134 @@ SharedPreperence에 접근 가능한 Manager 클래스를 관리하고 기본적
 
 </details>
 
+<details>
+<summary><h3 id="base-fragment">BaseFragment</h3></summary>
 
+```kotlin
+
+/**
+ * @param B 해당 Fragment의 Databinding Class
+ * @param layoutResId Layout xml의 resource ID
+ */
+public abstract class BaseFragment<B: ViewDataBinding>(private val layoutResId: Int): Fragment(), RecyclerViewParentController
+
+```
+
+DataBinding 환경에서 필요한 Fragment 기능을 정의합니다.</br>
+해당 클래스는 Fragment Class를 완전하게 대체합니다.</br>
+[RecyclerViewParentController](#recycler-view-parent-controller) Interface를 기본적으로 상속하고 있습니다.
+
+#### 적용 예제
+
+```kotlin
+class ExampleFragment: BaseFragment<ActivityExampleBinding>(R.layout.fragment_example) {
+
+    // binding 객체의 inflate 및 lifecycleOwner 설정을 입력할 필요가 없습니다.
+    // binding 객체는 onDestroyView Lifecycle에서 null로 설정됩니다.
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        super.onCreateView(inflater, container, savedInstanceState)
+        return binding.root
+    }
+
+    override fun onClickListItem(pos: Int, responseCode: Int) {
+        // RecyclerView을 구현한 상황에서 ListItem을 클릭했을 때의 반응을 구현
+        // 해당 Fragment에 RecyclerView가 없다면 빈 function으로 남겨두면 됩니다.
+    }
+
+    override fun onClickInnerItem(pos: Int, id: Int, responseCode: Int) {
+        // RecyclerView을 구현한 상황에서 ListItem 내부의 특정 View 클릭했을 때의 반응을 구현
+        // 해당 Fragment에 RecyclerView가 없다면 빈 function으로 남겨두면 됩니다.
+    }
+
+}
+
+```
+
+#### Values
+> `protected open val TAG: String`
+> - 클래스의 이름으로 문자열을 반환합니다.
+> - override를 통해 문자열을 재정의할 수 있습니다.
+
+> `protected val binding: B`
+> - 현재 클래스에 연결된 DataBinding 객체를 반환합니다.
+
+</details>
+
+<details>
+<summary><h3 id="base-fragment-for-view-binding">BaseFragmentForViewBinding</h3></summary>
+
+```kotlin
+
+/**
+ * @param B 해당 Fragment의 Viewbinding Class
+ * @param inflate ViewBinding을 inflate하는 함수 (FragmentXXX::inflate를 넘겨주면 됨)
+ */
+public abstract class BaseFragmentForViewBinding<B : ViewBinding>(private val inflate: FragmentInflater<B>) : Fragment(), RecyclerViewParentController
+
+```
+
+ViewBinding 환경에서 필요한 Fragment 기능을 정의합니다.</br>
+해당 클래스는 Fragment Class를 완전하게 대체합니다.</br>
+[RecyclerViewParentController](#recycler-view-parent-controller) Interface를 기본적으로 상속하고 있습니다.
+
+#### 적용 예제
+
+```kotlin
+class ExampleFragment: BaseFragmentForViewBinding<FragmentExampleBinding>(FragmentExampleBinding::inflate) {
+
+    // binding 객체의 inflate 및 lifecycleOwner 설정을 입력할 필요가 없습니다.
+    // binding 객체는 onDestroyView Lifecycle에서 null로 설정됩니다.
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        super.onCreateView(inflater, container, savedInstanceState)
+        return binding.root
+    }
+
+}
+
+```
+
+#### Values
+> `protected open val TAG: String`
+> - 클래스의 이름으로 문자열을 반환합니다.
+> - override를 통해 문자열을 재정의할 수 있습니다.
+
+> `protected val binding: B`
+> - 현재 클래스에 연결된 ViewBinding 객체를 반환합니다.
+
+</details>
+
+<details>
+<summary><h3 id="base-view-model">BaseViewModel</h3></summary>
+
+</details>
+
+<details>
+<summary><h3 id="preference-manager">PreferenceManager</h3></summary>
+
+</details>
+
+<details>
+<summary><h3 id="recycler-view-base-adapter">RecyclerViewBaseAdapter</h3></summary>
+
+</details>
+
+<details>
+<summary><h3 id="recycler-view-parent-controller">RecyclerViewParentController</h3></summary>
+
+</details>
+
+<details>
+<summary><h3 id="simple-permission-checker">SimplePermissionChecker</h3></summary>
+
+</details>
+
+<details>
+<summary><h3 id="progress-dialog">PrograssDialog</h3></summary>
+
+</details>
+
+
+<details>
+<summary><h3 id="extension-functions">Extension Functions</h3></summary>
+
+</details>
