@@ -341,10 +341,99 @@ class ExampleFragment: BaseFragmentForViewBinding<FragmentExampleBinding>(Fragme
 <details>
 <summary><h3 id="base-view-model">BaseViewModel</h3></summary>
 
+```kotlin
+
+public abstract class BaseViewModel: ViewModel()
+
+```
+
+MVVM 개발 환경에서 필요한 ViewModel 기능을 정의합니다.</br>
+해당 클래스는 ViewModel Class를 대체합니다.</br>
+[ActivityNavigator](#activity-navigator) 객체를 포함하고 있어, 해당 interface를 상속한 객체를 받아 구현해야 합니다.
+
+#### 적용 예제
+
+```kotlin
+class ExampleViewModel(override val navigator: ActivityNavigator) : BaseViewModel() {
+
+    fun doSomething() {
+        //...
+    }
+
+}
+
+```
+
+#### Values
+> `protected open val TAG: String`
+> - 클래스의 이름으로 문자열을 반환합니다.
+> - override를 통해 문자열을 재정의할 수 있습니다.
+
+> `protected abstract val navigator: ActivityNavigator`
+> - Activity의 특정 기능에 접근하기 위한 interface입니다.
+> - 일반적으로 Activity에서 해당 클래스를 상속해 구현한 뒤, BaseViewModel의 Parameter로 넘겨주어 사용합니다.
+> - [BaseActivity](#base-activity)에는 기본적으로 해당 interface가 구현된 상태로, 본 클래스에서 BaseActivity 객체를 받아 초기화하여 사용합니다.
+
+> `protected fun toast(res: Int)`</br>
+> `protected fun toast(string: String)`</br>
+> `protected fun startActivity(intent: Intent)`
+> - ActivityNavigator의 특정 기능에 빠르게 접근하기 위한 shortcut function입니다.
+> - ActivityNavigator에 구현된 동일명의 function을 실행합니다.
+
 </details>
 
 <details>
 <summary><h3 id="preference-manager">PreferenceManager</h3></summary>
+
+```kotlin
+
+/**
+ * @param masterKey 암호화에 사용할 masterKey
+ * @param fileName 디바이스에 저장될 SharedPreference 파일명. 입력하지 않을 시 packagename.preference로 저장된다.
+ */
+public class PreferenceManager(private val masterKey: String, private val fileName: String? = null)
+
+```
+
+암호화된 SharedPreference 객체를 초기화하고 관리합니다.
+
+#### Functions
+> `public fun init(context: Context)`
+> - SharedPreference 객체를 초기화합니다.
+> - 객체 선언 후 가장 먼저 호출해야 합니다.
+
+> `public fun put(key: String, value: String)`</br>
+> `public fun put(key: String, value: Int)`</br>
+> `public fun put(key: String, value: Boolean)`</br>
+> `public fun put(key: String, value: Long)`</br>
+> `public fun put(key: String, value: Float)`
+> - 지정된 key값으로 데이터를 저장합니다.
+
+> `public fun getString(key: String): String`
+> - 특정 key값으로 저장된 String 값을 불러옵니다.
+> - 값이 없을 경우 빈 문자열을 반환합니다.
+
+> `public fun getInt(key: String): Int`
+> - 특정 key값으로 저장된 Int 값을 불러옵니다.
+> - 값이 없을 경우 -1을 반환합니다.
+
+> `public fun getBoolean(key: String): Boolean`
+> - 특정 key값으로 저장된 Boolean 값을 불러옵니다.
+> - 값이 없을 경우 false를 반환합니다.
+
+> `public fun getLong(key: String): Long`
+> - 특정 key값으로 저장된 Long 값을 불러옵니다.
+> - 값이 없을 경우 -1L을 반환합니다.
+
+> `public fun getFloat(key: String): Float`
+> - 특정 key값으로 저장된 Float 값을 불러옵니다.
+> - 값이 없을 경우 -1f를 반환합니다.
+
+> `public fun delete(key: String)`
+> - 특정 key 값으로 저장된 데이터를 삭제합니다.
+
+> `public fun clear()`
+> - 저장되어있는 모든 값을 삭제합니다.
 
 </details>
 
