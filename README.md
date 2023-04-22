@@ -75,11 +75,15 @@ ViewModel에서 View 클래스의 의존성을 방지하면서 Activity 기능�
 일반적으로 Activity 등 View 클래스에 상속하여 구현합니다.</br>
 라이브러리 내 [BaseActivity](#base-activity)에 기본적으로 구현되어 있습니다.
 
+#### Values
+
 >`val context: Context`
 >- View 클래스의 context를 반환하도록 구현합니다.
 
 >`val activity: AppCompatActivity`
 >- Activity 객체를 반환하도록 구현합니다.
+
+#### Functions
 
 >`fun onBackPressed()`</br>
 >`fun clearFocus()`</br>
@@ -616,6 +620,21 @@ class ExampleActivity: BaseActivity<ActivityExampleBinding, ExampleViewModel>(R.
 
 <details>
 <summary><h3 id="recycler-view-parent-controller">RecyclerViewParentController</h3></summary>
+
+[RecyclerViewBaseAdapter](#recycler-view-base-adapter)의 Callback Function을 정의하고 관리하기 위한 interface입니다.</br>
+[BaseActivity](#base-activity), [BaseActivityForViewBinding](#base-activity-for-view-binding), [BaseFragment](#base-fragment), [BaseFragmentForViewBinding](#base-fragment-for-view-binding)에 기본적으로 상속되어 있으므로, 해당 Class를 사용하며 override를 통해 특정 동작을 구현할 것을 권장합니다.
+
+#### Functions
+
+> `public fun onClickListItem(pos: Int, responseCode: Int)`
+> RecyclerView에서 특정 Item을 클릭했을 때 event를 정의하기 위한 함수입니다.
+> RecyclerViewBaseAdapter에서 item click event 발생 시 호출하도록 설정하고, View Class에서 동작을 정의합니다.
+> 여러 개의 Adapter를 동시에 사용중일 경우, Adapter Class에 설정한 responseCode를 통해 Callback을 호출한 Adapter를 구분할 수 있습니다.
+
+> `public fun onClickInnerItem(pos: Int, id: Int, responseCode: Int)`
+> RecyclerView에서 Item 내부의 특정 View를 클릭했을 때 event를 정의하기 위한 함수입니다.
+> RecyclerViewBaseAdapter에서 특정 view 클릭 시 호출하도록 설정하고, View Class에서 동작을 정의합니다.
+> onClickListItem과 대체로 비슷한 동작을 수행하지만, 특정 id를 받아 클릭한 View를 구분합니다.
 
 </details>
 
