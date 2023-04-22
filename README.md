@@ -440,6 +440,178 @@ public class PreferenceManager(private val masterKey: String, private val fileNa
 <details>
 <summary><h3 id="recycler-view-base-adapter">RecyclerViewBaseAdapter</h3></summary>
 
+```kotlin
+/**
+ * @param MODEL: List Item의 데이터가 정의된 Model Class Type
+ * @param VB: Item Layout의 ViewBinding Class Type
+ * @param VH: RecyclerView.ViewHolder를 상속하여 구현한 ViewHolder Class type
+ */
+public abstract class RecyclerViewBaseAdapter<MODEL, VB: ViewBinding, VH: RecyclerView.ViewHolder>: RecyclerView.Adapter<VH>()
+```
+
+RecyclerView의 Adapter를 정의할 때 필수 사항 및 주로 사용되는 설정을 미리 정의하여 빠르게 구현할 수 있도록 도와줍니다.</br>
+Adapter를 사용하는 View Class에서 [RecyclerViewParentController](#recycler-view-parent-controller)를 상속해 구현해주어야 합니다.</br>
+</br>
+전체적인 구현 순서는 다음과 같습니다.
+
+> 1. Adapter class에 RecyclerViewBaseAdapter를 RecyclerView.Adapter 대신 상속하여 필요한 부분을 구현
+> 1. RecyclerView가 들어가는 Activity 또는 Fragment에 RecyclerViewParentController를 상속
+> 1. 이 클래스 구현체의 생성자 또는 setController 함수를 통해 controller 변수에 RecyclerViewParentController의 구현체를 전달
+
+#### 적용 예제
+
+- ##### Adapter
+``` kotlin
+class CustomGalleryAdapter(): RecyclerViewBaseAdapter<CustomGalleryImageModel, ItemCustomGalleryBinding, CustomGalleryAdapter.ViewHolder>() {
+
+    companion object {
+        // Adapter 외부에서 특정 View를 구분하기 위해 설정
+        val VIEW_ID_IV_IMAGE = 0
+    }
+
+    private lateinit var context: Context
+
+    // responseCode를 지정하지 않는 경우 -1로 설정
+    // 주로 하나의 Adapter만을 사용할 경우 해당 생성자로 초기화합니다.
+    constructor(controller: RecyclerViewParentController): this() {
+        setController(controller, -1)
+    }
+
+    // 하나의 View Class에서 두 개 이상의 Adapter를 사용할 경우, responseCode를 지정하여 구분
+    constructor(controller: RecyclerViewParentController, responseCode: Int): this() {
+        setController(controller, responseCode)
+    }
+    
+    // ViewHolder를 내부 클래스로 구현
+    inner class ViewHolder(private val binding: ItemCustomGalleryBinding, private val context: Context): RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: CustomGalleryImageModel, position: Int) {
+            binding.apply {
+                // List Item의 View를 설정
+            }
+        }
+    }
+    
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        context = parent.context
+        val binding = ItemCustomGalleryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val viewHolder = ViewHolder(binding, context)
+
+        // List Item을 클릭했을 때의 동작을 설정
+        binding.root.setOnClickListener {
+            val pos = viewHolder.adapterPosition
+
+            if (pos != RecyclerView.NO_POSITION) {
+                // controller의 onClickListItem callback을 실행하도록 구현합니다.
+                controller.onClickListItem(pos, responseCode)
+            }
+        }
+        
+        // List Item 내부의 특정 View를 클릭했을 때
+        binding.ivImage.setOnClickListener { view ->
+            val pos = viewHolder.adapterPosition
+
+            if (pos != RecyclerView.NO_POSITION) {
+                // 클릭한 View의 id를 onClickInnerItem Callback에 전달하여 어떤 view를 클릭했는지 구분합니다.
+                controller.onClickInnerItem(pos, VIEW_ID_IV_IMAGE, responseCode)
+            }
+        }
+
+        return viewHolder
+    }
+    
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = dataList[position]
+        holder.bind(item, position)
+    }
+    
+}
+```
+
+- ##### Activity
+
+```kotlin
+
+class ExampleActivity: BaseActivity<ActivityExampleBinding, ExampleViewModel>(R.layout.activity_example) {
+
+    companion object {
+        private const val RECYCLER_VIEW_CUSTOM_GALLERY = 0
+    }
+
+    // ...
+
+    private val adapter = CustomGalleryAdapter(this, RECYCLER_VIEW_CUSTOM_GALLERY)
+    
+    // Adapter에서 List Item을 클릭할 경우 실행되는 Callback Function
+    override fun onClickListItem(pos: Int, responseCode: Int) {
+        super.onClickListItem(pos, responseCode)
+
+        // responseCode로 특정 Adapter를 구분
+        when (responseCode) {
+            RECYCLER_VIEW_CUSTOM_GALLERY -> {
+                // CustomGalleryAdpater에서 Click Event가 발생했을 경우의 동작을 수행
+            }
+        }
+    }
+    
+    // Adapter에서 List Item 내부의 특정 View를 클릭할 경우 실행되는 Callback Function
+    override fun onClickInnerItem(pos: Int, id: Int, responseCode: Int) {
+        super.onClickInnerItem(pos, id, responseCode)
+
+        when (responseCode) {
+            MAX_SELECTED_COUNT -> {
+                if (id == CustomGalleryAdapter.VIEW_ID_IV_IMAGE) {
+                    // List Item 내부의 특정 View가 클릭되었을 경우의 동작을 수행
+                }
+            }
+        }
+    }
+}
+
+```
+
+#### Values
+
+> `public val dataList: List<MODEL>`
+> - adapter에 설정된 item의 data list를 반환합니다.
+
+> `public val responseCode: Int`
+> - adapter에 설정된 responseCode를 반환합니다.
+
+#### Functions
+
+> `override fun getItemCount()`
+> - adapter에 설정된 data list의 현재 size를 반환합니다.
+
+> `public fun setController(controller: RecyclerViewParentController, responseCode: Int)`
+> - controller 객체 및 responseCode를 받아 내부 변수에 할당합니다.
+> - 생성자에서 호출하는 것을 권장합니다.
+
+> `public open fun setDataList(list: ArrayList<MODEL>)`
+> - 외부 Data Model의 ArrayList를 받아 dataList에 할당합니다.
+> - 해당 function을 호출하지 않을 경우, 기본적으로 Adapter 내부의 List를 사용해 데이터를 관리합니다.
+
+> `public open fun notifyAdapter()`
+> - 기본적으로 notifyDataSetChanged()를 호출하도록 구현되어 있습니다.
+> - notify와 함께 추가적인 동작이 필요할 경우 override하여 해당 로직을 구현할 수 있습니다.
+
+> `public open fun addItems(list: List<MODEL>)`
+> - list 내의 모든 데이터를 내부 dataList에 추가합니다.
+
+> `public open fun addItem(item: MODEL)`
+> - 데이터를 내부 dataList에 추가합니다.
+
+> `public open fun removeItem(position: Int)`
+> - 특정 position의 데이터를 제거합니다.
+
+> `public open fun removeItem(item: MODEL)`
+> - 특정 model과 일치하는 데이터를 제거합니다.
+
+> `public open fun clearItem()`
+> - dataList의 모든 데이터를 제거합니다.
+
+> `public open fun getItem(position: Int) : MODEL`
+> - dataList에서 특정 postion의 데이터를 반환합니다.
+
 </details>
 
 <details>
