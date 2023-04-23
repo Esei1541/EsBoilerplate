@@ -641,6 +641,102 @@ class ExampleActivity: BaseActivity<ActivityExampleBinding, ExampleViewModel>(R.
 <details>
 <summary><h3 id="simple-permission-checker">SimplePermissionChecker</h3></summary>
 
+```kotlin
+
+/**
+ * @param parentActivity (필수) 권한 체크를 실행할 부모 activity
+ * @param onAllPermissionsGranted (선택) 권한이 모두 승인되었을 경우 실행할 callback
+ * @param onDenied (선택) 권한이 하나 이상 거부되었을 경우 실행할 callback / 기본적으로 showDialog()를 실행하도록 되어 있음
+ * @param showDialog (선택) 권한 거부 시 설정창으로 이동을 유도하는 dialog를 출력 / 기본값은 AlertDialog로 설정되어있지만, function을 통해 커스텀 가능
+ * @param onDialogPositive (선택) dialog에서 확인을 눌렀을 경우 실행할 callback / 기본적으로 설정 화면으로 이동하도록 되어 있음
+ * @param onDialogNegative (필수) 설정 이동 다이얼로그에서 취소를 눌렀을 경우 실행할 callback
+ * @param permissions (필수) 권한 체크를 실행할 권한 목록
+ */
+public class SimplePermissionChecker(
+    private val parentActivity: AppCompatActivity,
+    private var onAllPermissionsGranted: (() -> Unit)? = null,
+    private var onDenied: (() -> Unit)? = null,
+    private var showDialog: (() -> Unit)? = null,
+    private var onDialogPositive: (() -> Unit)? = null,
+    private var onDialogNegative: () -> Unit,
+    private var permissions: Array<String>
+)
+
+```
+
+일반적인 권한 체크 Flow를 자동화한 유틸리티 클래스입니다.</br>
+각 단계의 기본적인 동작이 사전에 정의되어있으며, param에 callback을 등록하여 커스텀이 가능합니다</br>
+해당 클래스는 내부적으로 registerForActivityResult를 사용하고 있으므로 반드시 Activity의 onCreate() lifecycle에 초기화되어야 합니다.</br>
+</br>
+커스텀하지 않은 기본적인 상태의 Flow는 다음과 같습니다.
+> * 1. 권한 체크 (체크할 권한의 종류는 생성자에서 필수 항목으로 넘겨주어야 합니다.)
+> * 2. 권한이 승인되었을 경우 onAllPermissionsGranted() callback 후 종료 / 권한 중 하나 이상이 거부되었을 경우 onDenied()를 통해 AlertDialog 출력
+> * 3. 다이얼로그에서 확인을 누르면 설정 화면으로 이동, 설정 화면에서 돌아올 경우 1번으로 돌아가 체크 flow 실행
+> * 4. 다이얼로그에서 취소를 눌렀을 경우 onDialogNegative() callback 후 종료
+
+#### 적용 예제
+```kotlin
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    permissionCheck()
+}
+
+// 필수가 아닌 항목을 기본 Flow로 동작하기 위해서는 생성자에서 Param을 작성하지 않거나 null을 넘겨줍니다.
+private fun permissionCheck(onAllPermissionGranted: () -> Unit) {
+    SimplePermissionChecker(
+        parentActivity = this,
+        onDialogNegative = {
+            // 권한 거부 -> 설정 이동을 유도하는 AlertDialog에서 취소를 눌렀을 경우
+            toast("권한이 거부되어 기능을 이용할 수 없습니다. 화면을 종료합니다.")
+            finish()
+        },
+        permissions = arrayOf(
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.CAMERA
+        )
+    ).check()
+}
+
+```
+
+#### Values
+
+> `public val dialogTitle: String`
+> - 설정화면 유도 AlertDialog에 출력될 Title String을 반환합니다.
+
+> `public val dialogMessage: String`
+> - 설정화면 유도 AlertDialog에 출력될 Message String을 반환합니다.
+
+#### Functions
+
+> `public fun check()`
+> - 권한 체크를 실행합니다.
+> - 체크할 권한 목록 및 callback 동작은 호출 시 설정된 값에 따릅니다.
+
+> `public fun setDefaultDialogTitle(title: String)`
+> - 설정화면 유도 AlertDialog에 출력될 Title String을 설정합니다.
+
+> `public fun setDefaultDialogMessage(message: String)`
+> - 설정화면 유도 AlertDialog에 출력될 Message String을 설정합니다.
+
+> `public fun setOnAllPermissionsGrantedListener(listener: () -> Unit)`
+> - 권한이 승인되었을 경우 실행될 `onAllPermissionsGranted()` callback function을 설정합니다.
+> - 기본 상태에서는 아무 동작도 수행하지 않습니다.
+
+> `public fun setOnDeniedListener(listener: () -> Unit)`
+> - 권한이 하나 이상 거부되었을 경우 실행될 `onDenied()` callback function을 설정합니다.
+> - 기본 상태에서는 `showDialog()`를 실행합니다
+
+> `public fun setOnShowDialogListener(listener: () -> Unit)`
+> - 설정화면으로 유도하는 AlertDialog를 출력하는 `showDialog()` callback function을 설정합니다.
+> - `onDenied()`가 기본 상태일 경우 실행됩니다.
+
+> `public fun setPermissions(permissions: Array<String>)`
+> - 체크할 권한 목록을 설정합니다.
+
 </details>
 
 <details>
