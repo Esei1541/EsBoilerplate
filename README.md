@@ -19,7 +19,6 @@ EsBoilerplate는 안드로이드 개발 환경에서 중복적으로 사용되�
     - [RecyclerViewBaseAdapter](#recycler-view-base-adapter)
     - [RecyclerViewParentController](#recycler-view-parent-controller)
     - [SimplePermissionChecker](#simple-permission-checker)
-    - [ProgressDialog](#progress-dialog)
     - [Extension Functions](#extension-functions)
 </br>
 
@@ -740,12 +739,74 @@ private fun permissionCheck(onAllPermissionGranted: () -> Unit) {
 </details>
 
 <details>
-<summary><h3 id="progress-dialog">PrograssDialog</h3></summary>
-
-</details>
-
-
-<details>
 <summary><h3 id="extension-functions">Extension Functions</h3></summary>
+
+개발에 주로 사용되는 유틸성 확장 함수를 정의합니다.
+    
+#### Functions
+
+> `public fun Context.toast(@StringRes res: Int)`
+> - String Resource ID를 받아 toast를 출력합니다.
+> - duration은 Toast.LENGTH_SHORT로 설정되어 있습니다.
+    
+> `public fun Context.toast(string: String)`
+> - String 문자열을 받아 toast를 출력합니다.
+> - duration은 Toast.LENGTH_SHORT로 설정되어 있습니다.
+    
+> `public fun Context.dpToPx(dp: Int): Int`
+> - Dp를 Px 단위로 변경합니다.
+
+> `public fun AppCompatActivity.setStatusBarColor(color: Int, lightMode: Boolean)`
+> - 화면 상단 status bar의 색상 및 `controllerCompat.isAppearanceLightStatusBars`를 변경합니다.
+    
+> `public fun AppCompatActivity.getStatusBarHeight(): Int`
+> - 화면 상단 status bar의 높이를 px size로 반환합니다.
+    
+> `public fun AppCompatActivity.getNavigationBarHeight(): Int`
+> - 화면 하단 navigation bar의 높이를 px size로 반환합니다.
+    
+> `public fun AppCompatActivity.isSoftNavigationBar(): Boolean`
+> - 현재 디바이스의 navigation bar가 소프트 키라면 true를, 물리 키라면 false를 반환합니다.
+    
+> `public fun Context.getScreenMaxWidth(): Int`
+> - 디바이스 스크린의 최대 넓이를 반환합니다.
+    
+> `public fun AppCompatActivity.addTransparentStatusBarFlag()`
+> - Activity의 window 객체에 status bar를 투명화하기 위한 Flag를 추가합니다.
+    
+> `public fun AppCompatActivity.removeStatusBar(rootLayout: ViewGroup)`
+> - 상단 status bar 영역을 제거합니다.
+    
+> `public fun AppCompatActivity.setLayoutInDisplayCutout()`
+> - Activity 레이아웃을 컷아웃 영역으로 배치합니다.
+    
+> `public fun AppCompatActivity.activityResultLauncher(onResultActivity: (ActivityResult) -> Unit): ActivityResultLauncher<Intent>`
+> - `registerForActivityResult`를 간소화한 shortcut function입니다.
+> - 특정 Activity를 실행시키고, 해당 Activity가 종료되었을 때 등록한 callback을 실행합니다.
+    
+> `public fun Uri.getRealPath(context: Context): String`
+> - Uri에서 실제 파일 경로를 반환합니다.
+    
+> `public fun Long.toLocalDate(): LocalDate`
+> - MilliSecond를 LocalDate로 변환합니다.
+
+> `public fun Long.toLocalDateTime(): LocalDateTime`
+> - MilliSecond를 LocalDateTime으로 변환합니다.
+    
+> `public fun LocalDate.toMilliSecond(): Long`
+> - LocalDate 객체에 지정된 시간값을 MilliSecond로 변환합니다.
+    
+> `public fun LocalDateTime.toMilliSecond(): Long`
+> - LocalDateTime 객체에 지정된 시간값을 MilliSecond로 변환합니다.
+    
+> `public fun String.emailValidation(): Boolean`
+> - 문자열을 검사하여 email 양식일 경우 true를 반환합니다.
+    
+> `public fun String.toNoBreakString(): String`
+> - String의 공백문자를 줄바꿈되지 않는 특수문자(\u00A0)로 변환하여 반환합니다.
+
+> `public inline fun <reified T> Gson.fromJson(json: String): T = fromJson<T>(json, object : TypeToken<T>() {}.type)`
+> - Gson() library 사용 시, TypeToken 객체를 통해 fromJson()을 호출합니다.
+> - List 등 TypeToken을 정의하지 않으면 Exception이 발생하는 타입을 변환할 때 사용하면 편리합니다.
 
 </details>
