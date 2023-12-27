@@ -1,92 +1,144 @@
 package kr.esei.library.module
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
+import com.google.gson.Gson
+import kr.esei.library.constant.fromJson
+import kr.esei.library.constant.observeEvent
 import kr.esei.library.constant.toast
+import kr.esei.library.model.EventDataBundle
 
 /**
- * 모든 MVVM Activity의 공통 사항을 정의하는 추상 클래스.
- * Parameter로 받은 DataBinding Class 및 ViewModel의 세팅과 추가 기능을 정의한다.
- * AppCompatActivity Class의 모든 기능과 ViewModel과의 연결을 담당할 ActivityNavigator Class, RecyclerViewBaseAdapter 사용 시 Callback을 정의할 ParentController의 기능을 포함한다.
- * 개별 Activity에서 필요한 사항은 override하여 사용할 것.
- * @param B 해당 Activity의 DataBinding Class
- * @param VM ViewModel Class
- * @param layoutResId Layout xml의 resource ID
+ * Abstract class defining the commonalities of MVVM Activities.
+ * Sets up the DataBinding Class and ViewModel received as parameters, and defines additional functionalities.
+ * Includes all features of the AppCompatActivity Class.
+ * Specific requirements in each Activity Class should be directly override.
+ * @param B DataBinding Class for Activity
+ * @param VM BaseViewModel Class
+ * @param layoutResId Resource ID of the layout XML
  */
-public abstract class BaseActivity<B : ViewDataBinding, VM : BaseViewModel>(private val layoutResId: Int) : AppCompatActivity(), ActivityNavigator, RecyclerViewParentController, BaseActivityListenerSetter {
+public abstract class BaseActivity<B : ViewDataBinding, VM : BaseViewModel>(private val layoutResId: Int) : AppCompatActivity(), RecyclerViewParentController {
+
+    public companion object {
+        public const val BASE_BUNDLE_KEY: String = "baseActivityBundle"
+        public const val RESULT_BUNDLE_KEY: String = "resultBundle"
+    }
 
     protected open val TAG: String = javaClass.simpleName
 
     protected lateinit var binding: B
 
-    // 구현 클래스에서 viewModel을 override하여 사용할 것
-    // Koin 라이브러리 등으로 의존성을 주입받아 사용하는 것을 추천
-    protected abstract val viewModel: VM
+    // Override the viewModel in the implementation class.
+    // Recommended to use through dependency injection libraries (like Koin).
+    protected abstract val activityViewModel: VM
 
-    override val context: Context get() = this
-    override val activity: AppCompatActivity get() = this
+    private val _activityResultLaunchers: MutableMap<String, ActivityResultLauncher<Intent>> = mutableMapOf()
+    public val activityResultLaunchers: Map<String, ActivityResultLauncher<Intent>> get() = _activityResultLaunchers
 
-    private lateinit var rootViewGroup: ViewGroup
-    private var onRequestPermissionResultListener: ((requestCode: Int, permissions: Array<out String>, grantResults: IntArray) -> Unit)? = null
+    // startActivityWithBundle Event를 통해 Activity가 실행되었을 경우, 전달받은 Bundle 객체를 가져온다.
+    protected val bundle: EventDataBundle? by lazy {
+        val bundle = intent.getStringExtra(BASE_BUNDLE_KEY)?.let { Gson().fromJson<EventDataBundle>(it) }
+        bundle
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, layoutResId)
         binding.lifecycleOwner = this
+        observeEvent()
+        initActivityResultLauncher()
+        activityViewModel.initBundle(bundle)
+        activityViewModel.onActivityCreate()
     }
 
-    override fun clearFocus() {
-        val root = binding.root as ViewGroup
-        root.clearFocus()
+    override fun onStart() {
+        super.onStart()
+        activityViewModel.onViewStart()
     }
 
-    //region navigator에서 activity 또는 context의 기능에 빠르게 접근하기 위한 shortcut function을 정의
-    override fun onBackPressed() {
-        super.onBackPressed()
+    override fun onResume() {
+        super.onResume()
+        activityViewModel.onViewResume()
     }
 
-    override fun finish() {
-        super.finish()
+    override fun onPause() {
+        super.onPause()
+        activityViewModel.onViewPause()
     }
 
-    override fun finishAffinity() {
-        super.finishAffinity()
+    override fun onStop() {
+        super.onStop()
+        activityViewModel.onViewStop()
     }
 
-    override fun toast(res: Int) {
-        context.toast(getString(res))
+    override fun onDestroy() {
+        super.onDestroy()
+        activityViewModel.onViewDestroy()
     }
 
-    override fun toast(string: String) {
-        context.toast(string)
+    /**
+     * Initializes the ActivityResultLauncher via the ActivityResultCallback declared in the ViewModel.
+     * The initialized ActivityResultLauncher is stored in activityResultLaunchers.
+     * When the startActivityWithBundle Event occurs and a launcherKey is passed, the Activity is launched using the launcher corresponding to the provided key.
+     */
+    private fun initActivityResultLauncher() {
+        activityViewModel.activityResultCallbacks.forEach { (key, callback) ->
+            _activityResultLaunchers[key] = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), callback)
+        }
     }
 
-    override fun startActivity(intent: Intent) {
-        super.startActivity(intent)
+    /**
+     * Observes and defines event callback in the ViewModel.
+     */
+    protected open fun observeEvent() {
+        activityViewModel.apply {
+            toast.observeEvent(this@BaseActivity) { event ->
+                toast(event)
+            }
+            toastRes.observeEvent(this@BaseActivity) { event ->
+                toast(event)
+            }
+            finish.observeEvent(this@BaseActivity) {
+                finish()
+            }
+            finishWithResult.observeEvent(this@BaseActivity) { result ->
+                result.apply {
+                    val intent = Intent()
+                    val resultBundle = result.data
+                    resultBundle?.let { intent.putExtra(RESULT_BUNDLE_KEY, it) }
+                    setResult(resultCode, intent)
+                }
+                finish()
+            }
+            removeTask.observeEvent(this@BaseActivity) {
+                finishAndRemoveTask()
+            }
+            launcher.observeEvent(this@BaseActivity) { (intent, launcherKey) ->
+                _activityResultLaunchers[launcherKey]?.launch(intent)
+            }
+            startActivity.observeEvent(this@BaseActivity) { clazz ->
+                startActivity(Intent(this@BaseActivity, clazz))
+            }
+            startActivityWithBundle.observeEvent(this@BaseActivity) { event ->
+                val intent = Intent(this@BaseActivity, event.activityClass).apply {
+                    putExtra(BASE_BUNDLE_KEY, Gson().toJson(event.bundle))
+                }
+
+                if (event.launcherKey != null) {
+                    _activityResultLaunchers[event.launcherKey]?.launch(intent)
+                } else {
+                    startActivity(intent)
+                }
+            }
+        }
     }
 
-    override fun startActivity(intent: Intent?, options: Bundle?) {
-        super.startActivity(intent, options)
-    }
-    //endregion
-
-    //region activity 외부에서 event를 설정할 수 있도록 setOnListener 함수를 정의
-    override fun setOnRequestPermissionsResultListener(listener: (requestCode: Int, permissions: Array<out String>, grantResults: IntArray) -> Unit) {
-        onRequestPermissionResultListener = listener
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        onRequestPermissionResultListener?.invoke(requestCode, permissions, grantResults)
-    }
-    //endregion
-
-    //region RecyclerViewBaseAdapter를 통해 RecyclerView 구현 시 click event callback. 필요할 경우 override 할 것.
+    //region On click event callback when implementing RecyclerView via RecyclerViewBaseAdapter. Override if necessary.
     override fun onClickListItem(pos: Int, responseCode: Int) {}
 
     override fun onClickInnerItem(pos: Int, id: Int, responseCode: Int) {}

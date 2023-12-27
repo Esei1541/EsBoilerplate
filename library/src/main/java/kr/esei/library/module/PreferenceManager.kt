@@ -2,58 +2,65 @@ package kr.esei.library.module
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
+import java.io.IOException
 
 /**
- * SharedPreference를 관리하는 class
- * 암호화된 SharedPreference를 사용한다.
- * @param masterKey 암호화에 사용할 masterKey
- * @param fileName 디바이스에 저장될 SharedPreference 파일명. 입력하지 않을 시 packagename.preference로 저장된다.
+ * Class for managing SharedPreference.
+ * Uses EncryptedSharedPreference.
+ * @param masterKey Master key to be used for encryption.
+ * @param fileName Name of the SharedPreference file to be stored on the device. If null, stored as packagename.preference.
  */
 public class PreferenceManager(
+    context: Context,
     private val masterKey: String,
     private val fileName: String? = null
 ) {
 
     private companion object {
-        private const val TAG = "PreferenceManager"
+        private const val TAG = "EncryptedPreferenceManager"
     }
 
-    private lateinit var mFileName: String
-    private lateinit var mContext: Context
-    private lateinit var preferences: SharedPreferences
-    private lateinit var editor: SharedPreferences.Editor
+    private var mContext: Context = context
+    private var mFileName: String = fileName ?: "${mContext.packageName}.preference"
+    private val preferences: SharedPreferences by lazy {
+        try {
+            createEncryptedPreferences()
+        } catch (e: IOException) {
+            Log.e(TAG, "Error with EncryptedSharedPreferences, resetting...", e)
+            resetEncryptedPreferences()
+            createEncryptedPreferences()
+        }
+    }
 
-    /**
-     * 필요한 값을 초기화한다
-     * Application Class에서 호출할 것
-     */
-    public fun init(context: Context) {
-        mContext = context
-        mFileName = fileName ?: "${mContext.packageName}.preference"
+    private var editor: SharedPreferences.Editor = preferences.edit()
 
-        // SharedPreference 암호화를 위한 masterKey를 생성한다
-        val masterKey = MasterKey.Builder(mContext, masterKey)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        preferences = EncryptedSharedPreferences.create(
-            context,
+    private fun createEncryptedPreferences(): SharedPreferences {
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+        return EncryptedSharedPreferences.create(
             mFileName,
-            masterKey,
+            masterKeyAlias,
+            mContext,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
-
-        editor = preferences.edit()
     }
 
-    //region 범용 public function
+    private fun resetEncryptedPreferences() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mContext.deleteSharedPreferences(mFileName)
+        } else {
+            preferences.edit().clear().apply()
+        }
+    }
+
+    //region public functions
 
     /**
-     * SharedPreference에 String 값을 저장한다
+     * Save String value in SharedPreference
      */
     public fun put(key: String, value: String) {
         Log.i(TAG, "Insert String Data -> key: $key, value: $value")
@@ -61,7 +68,7 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 Int 값을 저장한다
+     * Save Int value in SharedPreference
      */
     public fun put(key: String, value: Int) {
         Log.i(TAG, "Insert Int Data -> key: $key, value: $value")
@@ -69,7 +76,7 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 Boolean 값을 저장한다
+     * Save Boolean value in SharedPreference
      */
     public fun put(key: String, value: Boolean) {
         Log.i(TAG, "Insert Boolean Data -> key: $key, value: $value")
@@ -77,7 +84,7 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 Long 값을 저장한다
+     * Save Long value in SharedPreference
      */
     public fun put(key: String, value: Long) {
         Log.i(TAG, "Insert Long Data -> key: $key, value: $value")
@@ -85,7 +92,7 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 Float 값을 저장한다
+     * Save Float value in SharedPreference
      */
     public fun put(key: String, value: Float) {
         Log.i(TAG, "Insert Float Data -> key: $key, value: $value")
@@ -93,47 +100,47 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 저장된 String 값을 가져온다.
-     * 값이 없을 경우 빈 문자열을 return
+     * Get stored String value in SharedPreference.
+     * If default value is not set, return null.
      */
-    public fun getString(key: String): String {
-        return preferences.getString(key, null) ?: ""
+    public fun getString(key: String, default: String? = null): String? {
+        return preferences.getString(key, default)
     }
 
     /**
-     * SharedPreference에 저장된 Int 값을 가져온다.
-     * 값이 없을 경우 -1을 return
+     * Get stored Int value in SharedPreference.
+     * If default value is not set, return -1.
      */
-    public fun getInt(key: String): Int {
-        return preferences.getInt(key, -1)
+    public fun getInt(key: String, default: Int = -1): Int {
+        return preferences.getInt(key, default)
     }
 
     /**
-     * SharedPreference에 저장된 Boolean 값을 가져온다.
-     * 값이 없을 경우 false를 return
+     * Get stored Boolean value in SharedPreference.
+     * If default value is not set, return false.
      */
-    public fun getBoolean(key: String): Boolean {
-        return preferences.getBoolean(key, false)
+    public fun getBoolean(key: String, default: Boolean = false): Boolean {
+        return preferences.getBoolean(key, default)
     }
 
     /**
-     * SharedPreference에 저장된 Long 값을 가져온다.
-     * 값이 없을 경우 -1을 return
+     * Get stored Long value in SharedPreference.
+     * If default value is not set, return -1L.
      */
-    public fun getLong(key: String): Long {
-        return preferences.getLong(key, -1)
+    public fun getLong(key: String, default: Long = -1L): Long {
+        return preferences.getLong(key, default)
     }
 
     /**
-     * SharedPreference에 저장된 Float 값을 가져온다.
-     * 값이 없을 경우 -1을 return
+     * Get stored Float value in SharedPreference.
+     * If default value is not set, return -1f.
      */
-    public fun getFloat(key: String): Float {
-        return preferences.getFloat(key, -1f)
+    public fun getFloat(key: String, default: Float = -1f): Float {
+        return preferences.getFloat(key, default)
     }
 
     /**
-     * SharedPreference에 저장된 값을 삭제한다
+     * Delete stored value in SharedPreference.
      */
     public fun delete(key: String) {
         Log.i(TAG, "Delete data -> key: $key")
@@ -141,7 +148,7 @@ public class PreferenceManager(
     }
 
     /**
-     * SharedPreference에 저장된 모든 값을 삭제한다
+     * Delete all stored value in SharedPreference.
      */
     public fun clear() {
         Log.i(TAG, "Clear all data")

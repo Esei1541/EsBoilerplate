@@ -8,6 +8,13 @@ import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
 import kr.esei.library.constant.FragmentInflater
 
+/**
+ * Abstract class defining common aspects of Fragment withs ViewBinding.
+ * Includes all functionalities of the Fragment Class and the ability to define ParentController functionalities for RecyclerViewBaseAdapter Callbacks.
+ * Specific requirements in each Activity Class should be directly override.
+ * @param B ViewBinding Class of the Fragment
+ * @param inflate Function to inflate ViewBinding (pass FragmentXXXBinding::inflate)
+ */
 public abstract class BaseFragmentForViewBinding<B : ViewBinding>(private val inflate: FragmentInflater<B>) : Fragment(), RecyclerViewParentController {
 
     protected open val TAG: String = javaClass.simpleName

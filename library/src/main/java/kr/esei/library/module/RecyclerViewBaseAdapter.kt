@@ -13,6 +13,7 @@ import androidx.viewbinding.ViewBinding
  * @param VB: Item Layout의 ViewBinding Class Type
  * @param VH: RecyclerView.ViewHolder를 상속하여 구현한 ViewHolder Class type
  */
+@Deprecated("This class has been deprecated. Use BaseListAdapter instead.")
 public abstract class RecyclerViewBaseAdapter<MODEL, VB: ViewBinding, VH: RecyclerView.ViewHolder>: RecyclerView.Adapter<VH>() {
 
     protected open val TAG: String = javaClass.simpleName

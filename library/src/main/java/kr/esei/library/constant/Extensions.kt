@@ -21,8 +21,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kr.esei.library.util.EventObserver
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -275,3 +277,8 @@ public fun String.toNoBreakString(): String {
  * List 등 TypeToken을 정의하지 않으면 Exception이 발생하는 타입을 변환할 때 사용하면 됨
  */
 public inline fun <reified T> Gson.fromJson(json: String): T = fromJson<T>(json, object : TypeToken<T>() {}.type)
+
+// Event Wrapper를 Observe하기 위한 Extension Function
+public fun <T> LiveEvent<T>.observeEvent(owner: LifecycleOwner, onEventUnhandledContent: (T) -> Unit) {
+    observe(owner, EventObserver(onEventUnhandledContent))
+}

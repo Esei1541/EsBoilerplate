@@ -31,6 +31,7 @@ import kr.esei.library.constant.activityResultLauncher
  * @param onDialogNegative (필수) 설정 이동 다이얼로그에서 취소를 눌렀을 경우 실행할 callback
  * @param permissions (필수) 권한 체크를 실행할 권한 목록
  */
+@Deprecated("This class is deprecated.")
 public class SimplePermissionChecker(
     private val parentActivity: AppCompatActivity,
     private var onAllPermissionsGranted: (() -> Unit)? = null,
